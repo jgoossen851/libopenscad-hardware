@@ -18,6 +18,7 @@ module pro_micro_c() {
   height_usbc = 3.4;
   offset_usbc_y = 1.3; // Amount USB-C sticks off end of PCB
   offset_usbc_x = 0.9; // Amount USB-C is shifted from center (right positive)
+  pin_header_width = 2.54;
 
   mount_x = -7.5; // Mount hole (if present) relative to center of USB interface plane
   mount_y = -3.1; // Mount hole (if present) relative to center of USB interface plane
@@ -40,6 +41,6 @@ module pro_micro_c() {
 
   // PCB components (clearance)
   color("DimGray")
-  translate([-width/2 - offset_usbc_x,  -length - offset_usbc_y, -height_usbc/2])
-  cube([width, length - length_usbc + offset_usbc_y, height - height_pcb]);
+  translate([-width/2 - offset_usbc_x + pin_header_width,  -length - offset_usbc_y, -height_usbc/2])
+  cube([width - 2*pin_header_width, length - length_usbc + offset_usbc_y, height - height_pcb]);
 }
