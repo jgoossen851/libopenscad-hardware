@@ -48,12 +48,17 @@ module pro_micro_c(mount = true) {
   cube([comp_width, comp_length + eps, height - height_pcb]);
 }
 
-module pro_micro_pcb() {
-  translate([-width/2 - offset_usbc_x, -length - offset_usbc_y, -height_pcb - height_usbc/2])
-  cube([width, length, height_pcb]);
+module pro_micro_pcb(offset_xy = 0) {
+  translate([0, 0, -height_pcb - height_usbc/2])
+  linear_extrude(height = height_pcb)
+  offset(delta = offset_xy)
+  translate([-width/2 - offset_usbc_x, -length - offset_usbc_y])
+  square([width, length]);
 }
 
-module pro_micro_usbc() {
-  translate([0, -length_usbc / 2, 0])
-  cube([width_usbc, length_usbc, height_usbc], center = true);
+module pro_micro_usbc(offset_xy = 0) {
+  linear_extrude(height = height_usbc, center = true)
+  offset(delta = offset_xy)
+  translate([0, -length_usbc / 2])
+  square([width_usbc, length_usbc], center = true);
 }
