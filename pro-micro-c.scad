@@ -9,15 +9,15 @@ pro_micro_c();
 // ### Module ########################################################
 
 eps = 0.01;
-width = 18;
-length = 37;
+width = 18; // 0.7 * 25.4 (+0.22)
+length = 37; // 1.3 * 25.4 (+3.98)
 height = 3.5; // Height including components (excluding USB connector)
 height_pcb = 1.6;
 width_usbc = 9.1;
 length_usbc = 7.5;
 height_usbc = 3.4;
-offset_usbc_y = 1.3; // Amount USB-C sticks off end of PCB
-offset_usbc_x = 0.9; // Amount USB-C is shifted from center (right positive)
+offset_usbc_y = 0.05*25.4; // Amount USB-C sticks off end of PCB
+offset_usbc_x = 0.5; // Amount USB-C is shifted from center (right positive)
 pin_header_width = 2.54;
 
 mount_x = -7.5; // Mount hole (if present) relative to center of USB interface plane
