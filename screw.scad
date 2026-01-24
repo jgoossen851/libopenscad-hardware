@@ -65,7 +65,7 @@ module screw_calibration( head = "cap", size = "M3", thread = "threaded") {
 
     // Horizontal screw
     translate([-diameter_shaft, dy/2 - inset, dz/2])
-    rotate([-90, 0, 0]){
+    rotate([-90, 90, 0]){
       screw(head = head, size = size, length = dx, thread = thread);
       %screw(head = head, size = size, length = dx, thread = "nominal");
     }
@@ -109,10 +109,10 @@ function screw_dims(head, size, thread = "nominal") =
   let( threadD = [
   //    n    t    l
     [    1,    1,    1],  // default
-    [    3,  3.2,  3.6],  // M3 coarse
-    [ 2.85,  2.4,  3.5],  // #4 wood
-    [ 3.51,  3.1,  4.1],  // #6 wood
-    [ 4.17,  3.8,  4.8],  // #8 wood
+    [    3,  2.6,  3.6],  //? M3 coarse
+    [ 2.85,  2.4,  3.5],  //? #4 wood
+    [ 3.51,  3.1,  4.1],  //? #6 wood
+    [ 4.17,  3.8,  4.8],  //? #8 wood
     [4.826, 4.40, 5.00],  //? #10 machine
   ] )
   // https://www.mcfeelys.com/screw_size_comparisons
@@ -186,18 +186,23 @@ module screw(head, size, length = 10, thread = "nominal", taper = false) {
   t = taper ? 1.0*threadD : 0;
 
   if ( head == "cap" || head == "flat" ) {
-    color( "Silver" )
+    // Head
     rotate_extrude()
-    screw_profile(head = head, id = threadD, od = headD, l = l, h = h, t = t, thread = thread);
+    screw_headProfile(head = head, id = threadD, od = headD, l = l, h = h, t = t, thread = thread);
+
+    // Shaft
+    // Scale the given threaded radius for the pentagon circumradius
+    scaleD = thread == "threaded" ? 1 / cos (180 / 5) : 1;
+    rotate_extrude($fn = thread == "threaded" ? 5 : 0)
+    screw_shaftProfile(head = head, id = scaleD * threadD, od = headD, l = l, h = h, t = t, thread = thread);
 
   } else if ( head == "nut" ) {
     nominalDims = screw_dims("cap", size, "nominal");
     nutW = dims[3];
     nutH = 0.8 * nominalDims[0];
-    color( "Silver" )
     difference() {
       rotate_extrude($fn = 6)
-      screw_profile(head = "cap", od = nutW / sqrt(3) * 2, h = nutH);
+      screw_headProfile(head = "cap", od = nutW / sqrt(3) * 2, h = nutH);
       
       if ( thread == "nominal" ) {
         cylinder( h = 3*nutH, d = nominalDims[0]);
@@ -209,20 +214,40 @@ module screw(head, size, length = 10, thread = "nominal", taper = false) {
   }
 }
 
-
-module screw_profile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
+module screw_shaftProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
   eps = 0.01;
   pts = [
-    // 7 - 6
-    // `   `
-    // 0---5
-    // | 3-4
+    // 0-3-,  Origin
+    // | .-'
     // | |
-    // | 2
-    // 1'
+    // | 2    Taper
+    // 1'     Base
     [0, 0],
     [0, -l - eps],
     [id / 2, -l - eps + t],
+    [id / 2, 0]
+  ];
+
+  translate([0, (head == "cap" ? h : 0) + eps])
+  polygon(
+    points = pts,
+    paths = [[0, 1, 2, 3]],
+    convexity = 1
+  );
+}
+
+module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
+  eps = 0.01;
+  pts = [
+    // 6 - 5  Installation Clearance
+    // `   `
+    // 0---4  Origin
+    // 1 2-3  Cap/Countersink Depth
+    // | |
+    // | |
+    // |'
+    [0, 0],
+    [0, -h],
     [id / 2, -h],
     [od / 2, -h],
     [od / 2, 0],
@@ -235,7 +260,7 @@ module screw_profile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
     polygon(
       points = pts,
       paths = [
-        (thread == "nominal") ? [0, 1, 2, 3, 4, 5] : [7, 1, 2, 3, 4, 6]
+        (thread == "nominal") ? [0, 1, 3, 4] : [6, 1, 3, 5]
       ],
       convexity = 1
     );
@@ -244,7 +269,7 @@ module screw_profile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
     polygon(
       points = pts,
       paths = [
-        (thread == "nominal") ? [0, 1, 2, 3, 5] : [7, 1, 2, 3, 5, 6]
+        (thread == "nominal") ? [0, 1, 2, 4] : [6, 1, 2, 4, 5]
       ],
       convexity = 1
     );
