@@ -1,3 +1,4 @@
+// Parametric screw and bolt models for hole negatives
 
 // ### Usage #########################################################
 
@@ -16,11 +17,12 @@ module samples(thread) {
   screw("flat", "no6", 1/2, thread, taper = true);
 }
 
+// Screw Previews in loose holes
+#samples(thread = "nominal");
 
-#samples("nominal");
-
+// Screw Previews in threaded holes
 translate([0, 10, 0])
-#samples("nominal");
+#samples(thread = "nominal");
 
 difference() {
   union() {
@@ -39,17 +41,18 @@ difference() {
   samples("threaded");
 }
 
+// Get internal parameters with the screw_dims() function:
 echo(["threadD", "headD", "headH", "nutW"]);
 echo(screw_dims("cap", "M3", "loose"));
 
 
 // ### Module ########################################################
 
-// Dimesions
+// Dimensions
 
-// Heads
+// * Heads (string)
 // flat      : Countersunk
-// hex       : Hex head mith flange
+// hex       : Hex head with flange
 // lag       : Hex head with no flange
 // pan       : Rounded top
 // cap       : Socket type head
@@ -57,12 +60,12 @@ echo(screw_dims("cap", "M3", "loose"));
 // nut       : Hex nut
 // washer    : Washer
 
-// Sizes
+// * Sizes (string)
 // M3, M5, etc.   : Metric
 // no6, no8, etc. : ANSI
 
-// Thread
-// nominal  : dimesions of bolt
+// * Thread (string)
+// nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
 function screw_dims(head, size, thread = "nominal") =
@@ -115,7 +118,7 @@ function screw_dims(head, size, thread = "nominal") =
 
 // Heads
 // flat      : Countersunk
-// hex       : Hex head mith flange
+// hex       : Hex head with flange
 // lag       : Hex head with no flange
 // pan       : Rounded top
 // cap       : Socket type head
@@ -131,7 +134,7 @@ function screw_dims(head, size, thread = "nominal") =
 // Length in mm (metric) or inches (ANSI)
 
 // Thread
-// nominal  : dimesions of bolt
+// nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
 module screw(head, size, length = 10, thread = "nominal", taper = false) {
