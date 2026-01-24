@@ -70,47 +70,54 @@ echo(screw_dims("cap", "M3", "loose"));
 // threaded : tight clearance allowing threads to be cut
 function screw_dims(head, size, thread = "nominal") =
   // Dimensions: [nominal, threaded, loose]
-  let( tt = ( thread == "nominal" )   ? 0 :
-            ( thread == "threaded" )  ? 1 :
-                                        2 )
-  let( ss = ( size == "M3" )  ? 1 :
-            ( size == "no4" ) ? 2 :
-            ( size == "no6" ) ? 3 :
-            ( size == "no8" ) ? 4 :
-                                0 )
+  let( tt = ( thread == "threaded" )  ? 1
+          : ( thread == "loose" )     ? 2
+          :                             0
+  )
+  let( ss = ( size == "M3" )   ? 1
+          : ( size == "no4" )  ? 2
+          : ( size == "no6" )  ? 3
+          : ( size == "no8" )  ? 4
+          : ( size == "no10" ) ? 5  // #10 machine
+          :                      0
+  )
   // https://www.boltdepot.com/fastener-information/machine-screws/machine-screw-diameter.aspx
   let( threadD = [
   //    n    t    l
-    [   1,   1,   1], // default
-    [   3, 3.2, 3.6], // M3 coarse
-    [2.85, 2.4, 3.5], // #4 wood
-    [3.51, 3.1, 4.1], // #6 wood
-    [4.17, 3.8, 4.8]  // #8 wood
+    [    1,    1,    1],  // default
+    [    3,  3.2,  3.6],  // M3 coarse
+    [ 2.85,  2.4,  3.5],  // #4 wood
+    [ 3.51,  3.1,  4.1],  // #6 wood
+    [ 4.17,  3.8,  4.8],  // #8 wood
+    [4.826, 4.40, 5.00],  //? #10 machine
   ] )
   // https://www.mcfeelys.com/screw_size_comparisons
   let( headD = [
   //     n    t    l
-    [    1,   1,   1], // default
-    [  5.3,   6,   6], // M3 coarse
-    [5.715, 6.3, 6.3], // #4 wood
-    [7.087, 7.6, 7.6], // #6 wood
-    [8.433, 9.1, 9.1]  // #8 wood
+    [    1,    1,    1],  // default
+    [  5.3,    6,    6],  // M3 coarse
+    [5.715,  6.3,  6.3],  // #4 wood
+    [7.087,  7.6,  7.6],  // #6 wood
+    [8.433,  9.1,  9.1],  // #8 wood
+    [ 0.00, 0.00, 0.00],  //? #10 machine
   ] )
   let( headH = [
   // n    t    l
-    [1,   1,   1], // default
-    [3, 3.5, 3.5], // M3 coarse
-    [1,   1,   1], // #4 wood
-    [1,   1,   1], // #6 wood
-    [1,   1,   1]  // #8 wood
+    [   1,    1,    1],  // default
+    [   3,  3.5,  3.5],  // M3 coarse
+    [   1,    1,    1],  //? #4 wood
+    [   1,    1,    1],  //? #6 wood
+    [   1,    1,    1],  //? #8 wood
+    [0.00, 0.00, 0.00],  //? #10 machine
   ] )
   let( nutW = [ // (flat-to-flat)
   //   n    t    l
-    [  1,   1,   1], // default
-    [5.5, 6.0, 6.1], // M3 coarse
-    [  1,   1,   1], // #4 wood
-    [  1,   1,   1], // #6 wood
-    [  1,   1,   1]  // #8 wood
+    [   1,    1,    1],  // default
+    [ 5.5,  6.0,  6.1],  // M3 coarse
+    [   1,    1,    1],  //? #4 wood
+    [   1,    1,    1],  //? #6 wood
+    [   1,    1,    1],  //? #8 wood
+    [0.00, 0.00, 0.00],  //? #10 machine
   ] )
   [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ];
 
