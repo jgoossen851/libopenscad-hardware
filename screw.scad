@@ -9,7 +9,21 @@ $fs = $preview ? 1 : 0.25;  // minimum size of a fragment
 //   Heads:   flat, hex, lag, pan, cap, carriage, nut, washer
 //   Sizes:   no4, no6, no8, no10, M3
 //   Threads: nominal, loose, threaded
-screw_calibration(head = "cap", size = "M3", thread = "threaded");
+head = "cap";
+size = "M3";
+thread = "threaded";
+
+// Nominal test print
+screw_calibration(head = head, size = size, thread = thread);
+
+// Over- & Under-sized test prints
+// (then modify tables below with best-fitting value)
+delta = 0.1;
+moduleSep = 4.5*screw_dims(size = size, thread = "nominal")[0];
+for (ix = [-1, 1])
+translate([ix*moduleSep, 0, 0])
+screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
+
 
 // Display some sample configurations
 translate([0, 20, 0])
@@ -35,9 +49,9 @@ echo(screw_dims("cap", "M3", "loose"));
 // ### Module ########################################################
 
 // Test Bed for tuning dimension tables to printer
-module screw_calibration( head = "cap", size = "M3", thread = "threaded") {
+module screw_calibration( head = "cap", size = "M3", thread = "threaded", adjust = 0) {
   difference() {
-    // Read tuned dimensions
+    // Read nominal dimensions
     dims = screw_dims(size = size, thread = "nominal");
     diameter_shaft  = dims[0];
     diameter_head   = dims[1];
@@ -59,14 +73,14 @@ module screw_calibration( head = "cap", size = "M3", thread = "threaded") {
 
     // Vertical screw
     translate([diameter_shaft, 0, dz - inset]) {
-      screw(head = head, size = size, length = dx, thread = thread);
+      screw(head = head, size = size, length = dx, thread = thread, adjust = adjust);
       %screw(head = head, size = size, length = dx, thread = "nominal");
     }
 
     // Horizontal screw
     translate([-diameter_shaft, dy/2 - inset, dz/2])
     rotate([-90, 90, 0]){
-      screw(head = head, size = size, length = dx, thread = thread);
+      screw(head = head, size = size, length = dx, thread = thread, adjust = adjust);
       %screw(head = head, size = size, length = dx, thread = "nominal");
     }
   }
@@ -92,7 +106,11 @@ module screw_calibration( head = "cap", size = "M3", thread = "threaded") {
 // nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
-function screw_dims(head, size, thread = "nominal") =
+
+// * Adjust
+//   Amount to add (or subtract) from all dimensions to account for additional
+//   desired clearances
+function screw_dims(head, size, thread = "nominal", adjust = 0) =
   // Dimensions: [nominal, threaded, loose]
   let( tt = ( thread == "threaded" )  ? 1
           : ( thread == "loose" )     ? 2
@@ -143,7 +161,8 @@ function screw_dims(head, size, thread = "nominal") =
     [   1,    1,    1],  //? #8 wood
     [0.00, 0.00, 0.00],  //? #10 machine
   ] )
-  [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ];
+  [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ]
+    + adjust * [1, 1, 1, 1];
 
 // Screws
 
@@ -168,11 +187,11 @@ function screw_dims(head, size, thread = "nominal") =
 // nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
-module screw(head, size, length = 10, thread = "nominal", taper = false) {
+module screw(head, size, length = 10, thread = "nominal", taper = false, adjust = 0) {
   eps = 0.01;
   inch2mm = 25.4;
 
-  dims = screw_dims(head, size, thread = thread);
+  dims = screw_dims(head, size, thread = thread, adjust = adjust);
   threadD = dims[0];
   headD = dims[1];
   headH = dims[2];
