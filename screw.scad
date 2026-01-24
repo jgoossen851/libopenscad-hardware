@@ -5,6 +5,16 @@
 $fa = $preview ? 20 : 1;    // minimum angle for a fragment
 $fs = $preview ? 1 : 0.25;  // minimum size of a fragment
 
+// Test print, with horizontal and vertical screw holes
+//   Heads:   flat, hex, lag, pan, cap, carriage, nut, washer
+//   Sizes:   no4, no6, no8, no10, M3
+//   Threads: nominal, loose, threaded
+screw_calibration(head = "cap", size = "M3", thread = "threaded");
+
+// Display some sample configurations
+translate([0, 20, 0])
+%samples(thread = "nominal");
+
 module samples(thread) {
   translate([10, 0, 0])
   screw("cap", "M3", 16, thread);
@@ -17,36 +27,50 @@ module samples(thread) {
   screw("flat", "no6", 1/2, thread, taper = true);
 }
 
-// Screw Previews in loose holes
-#samples(thread = "nominal");
-
-// Screw Previews in threaded holes
-translate([0, 10, 0])
-#samples(thread = "nominal");
-
-difference() {
-  union() {
-    dx = 100;
-    dy = 10;
-    dz = 50;
-    translate([0, 0, -dz])
-    cube([dx, dy, dz]);
-    translate([0, (dy - 0.6*dy)/2, 0])
-    cube([dx, 0.6*dy, 5]);
-  }
-
-  samples("loose");
-
-  translate([0, 10, 0])
-  samples("threaded");
-}
-
-// Get internal parameters with the screw_dims() function:
+// Demonstrate access to internal parameters with the screw_dims() function:
 echo(["threadD", "headD", "headH", "nutW"]);
 echo(screw_dims("cap", "M3", "loose"));
 
 
 // ### Module ########################################################
+
+// Test Bed for tuning dimension tables to printer
+module screw_calibration( head = "cap", size = "M3", thread = "threaded") {
+  difference() {
+    // Read tuned dimensions
+    dims = screw_dims(size = size, thread = "nominal");
+    diameter_shaft  = dims[0];
+    diameter_head   = dims[1];
+    height_head     = dims[2];
+    width_nut       = dims[3];
+
+    // Set test-block dimensions
+    dx = diameter_shaft * 5;
+    dy = min(diameter_head * 1.75, diameter_head + 4);
+    dz = min(diameter_head * 1.5, diameter_head + 2);
+
+    inset = head == "cap" ? height_head
+          : head == "nut" ? 0.8 * diameter_shaft
+          :                 0;
+
+    // translate([0, 0, -dz])
+    linear_extrude(height = dz)
+    square([dx, dy], center = true);
+
+    // Vertical screw
+    translate([diameter_shaft, 0, dz - inset]) {
+      screw(head = head, size = size, length = dx, thread = thread);
+      %screw(head = head, size = size, length = dx, thread = "nominal");
+    }
+
+    // Horizontal screw
+    translate([-diameter_shaft, dy/2 - inset, dz/2])
+    rotate([-90, 0, 0]){
+      screw(head = head, size = size, length = dx, thread = thread);
+      %screw(head = head, size = size, length = dx, thread = "nominal");
+    }
+  }
+}
 
 // Dimensions
 
