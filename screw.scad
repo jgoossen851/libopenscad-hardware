@@ -7,7 +7,7 @@ $fs = $preview ? 1 : 0.25;  // minimum size of a fragment
 
 // Test print, with horizontal and vertical screw holes
 //   Heads:   flat, hex, lag, pan, cap, carriage, nut, washer
-//   Sizes:   no4, no6, no8, no10, M3
+//   Sizes:   no4, no6, no8, no10, M3, M5, M8
 //   Threads: nominal, loose, threaded
 head = "cap";
 size = "M3";
@@ -124,50 +124,64 @@ function screw_dims(head, size, thread = "nominal", adjust = 0) =
           : ( thread == "loose" )     ? 2
           :                             0
   )
-  let( ss = ( size == "M3" )   ? 1
-          : ( size == "no4" )  ? 2
-          : ( size == "no6" )  ? 3
-          : ( size == "no8" )  ? 4
-          : ( size == "no10" ) ? 5  // #10 machine
+  let( ss = ( size == "M3" )   ? 1  // M3 coarse
+          : ( size == "M5" )   ? 2  // M5 coarse
+          : ( size == "M8" )   ? 3  // M8 coarse
+          : ( size == "no4" )  ? 4
+          : ( size == "no6" )  ? 5
+          : ( size == "no8" )  ? 6
+          : ( size == "no10" ) ? 7  // #10 machine
           :                      0
   )
-  // https://www.boltdepot.com/fastener-information/machine-screws/machine-screw-diameter.aspx
   let( threadD = [
+  // https://www.boltdepot.com/fastener-information/machine-screws/machine-screw-diameter.aspx
+  // https://www.mcfeelys.com/screw_size_comparisons [-, Body Dia, Thread Dia]
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [D, -, -]
   //    n    t    l
     [    1,    1,    1],  // default
     [    3,  2.6,  3.6],  //? M3 coarse
+    [    5, 4.80, 5.20],  //? M5 coarse
+    [    8, 7.80, 8.20],  //? M8 coarse
     [ 2.85,  2.4,  3.5],  //? #4 wood
     [ 3.51,  3.1,  4.1],  //? #6 wood
     [ 4.17,  3.8,  4.8],  //? #8 wood
     [4.826, 4.40, 5.00],  //? #10 machine
   ] )
-  // https://www.mcfeelys.com/screw_size_comparisons
   let( headD = [
+  // https://www.mcfeelys.com/screw_size_comparisons [Flat Head, -, -]
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [A, -, -]
   //     n    t    l
     [    1,    1,    1],  // default
-    [  5.3,    6,    6],  // M3 coarse
+    [  5.5,    6,    6],  // M3 coarse
+    [  8.5,  9.0,  9.0],  //? M5 coarse
+    [   13, 13.5, 13.5],  //? M8 coarse
     [5.715,  6.3,  6.3],  // #4 wood
     [7.087,  7.6,  7.6],  // #6 wood
     [8.433,  9.1,  9.1],  // #8 wood
     [ 0.00, 0.00, 0.00],  //? #10 machine
   ] )
   let( headH = [
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [H, -, -]
   // n    t    l
-    [   1,    1,    1],  // default
-    [   3,  3.5,  3.5],  // M3 coarse
-    [   1,    1,    1],  //? #4 wood
-    [   1,    1,    1],  //? #6 wood
-    [   1,    1,    1],  //? #8 wood
-    [0.00, 0.00, 0.00],  //? #10 machine
+    [    1,    1,    1],  // default
+    [    3,  3.5,  3.5],  // M3 coarse
+    [    5,  5.5,  5.5],  //? M5 coarse
+    [    8,  8.5,  8.5],  //? M8 coarse
+    [    1,    1,    1],  //? #4 wood
+    [    1,    1,    1],  //? #6 wood
+    [    1,    1,    1],  //? #8 wood
+    [ 0.00, 0.00, 0.00],  //? #10 machine
   ] )
   let( nutW = [ // (flat-to-flat)
   //   n    t    l
-    [   1,    1,    1],  // default
-    [ 5.5,  6.0,  6.1],  // M3 coarse
-    [   1,    1,    1],  //? #4 wood
-    [   1,    1,    1],  //? #6 wood
-    [   1,    1,    1],  //? #8 wood
-    [0.00, 0.00, 0.00],  //? #10 machine
+    [    1,    1,    1],  // default
+    [  5.5,  6.0,  6.1],  // M3 coarse
+    [ 0.00, 0.00, 0.00],  //? M5 coarse
+    [ 0.00, 0.00, 0.00],  //? M8 coarse
+    [    1,    1,    1],  //? #4 wood
+    [    1,    1,    1],  //? #6 wood
+    [    1,    1,    1],  //? #8 wood
+    [ 0.00, 0.00, 0.00],  //? #10 machine
   ] )
   [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ]
     + adjust * [1, 1, 1, 1];
