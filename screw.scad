@@ -20,7 +20,7 @@ screw_calibration(head = head, size = size, thread = thread);
 // (then modify tables below with best-fitting value)
 delta = 0.1;
 nomD = screw_dims(size = size, thread = "nominal")[0];
-moduleSep = 4.5 * nomD;
+moduleSep = 4.7 * nomD;
 for (ix = [-1, 1]) {
   translate([ix*moduleSep, 0, 0])
   screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
@@ -71,6 +71,7 @@ module screw_calibration( head = "cap", size = "M3", thread = "threaded", adjust
     dz = min(diameter_head * 1.5, diameter_head + 2);
 
     inset = head == "cap" ? height_head
+          : head == "hex" ? height_head
           : head == "nut" ? 0.8 * diameter_shaft
           :                 0;
 
@@ -206,18 +207,23 @@ module screw(head, size, length = 10, thread = "nominal", taper = false, adjust 
   // Convert imperial to metric, adjust for cap/clearance
   l = length
         * (( size == "no4" || size == "no6" || size == "no8" )  ? inch2mm : 1)
-        + (( head == "cap" )                                    ? headH   : 0)
+        + (( head == "cap" || head == "hex" )                   ? headH   : 0)
         + (( thread == "nominal" )                              ? 0       : 0.5);
   h = ( head == "flat" )  ? (headD - threadD) / 2 / tan(40) : headH;
   t = taper ? 1.0*threadD : 0;
 
-  if ( head == "cap" || head == "flat" ) {
+  if ( head == "cap" || head == "flat" || head == "hex"  ) {
     // Scale the given threaded radius for the pentagon circumradius
     scaleD = thread == "threaded" ? 1 / cos (180 / 5) : 1;
 
+    // Convert side-to-side diameter to corner-to-corner
+    // Assume that the side-to-side hex width (inscribed diameter) is the same as the socket cap diameter
+    scaleOD = head == "hex" ? 2 / sqrt(3) : 1;
+
     // Head
-    rotate_extrude()
-    screw_headProfile(head = head, id = scaleD * threadD, od = headD, l = l, h = h, t = t, thread = thread);
+    rotate([0, 0, 90])
+    rotate_extrude($fn = head == "hex" ? 6 : 0)
+    screw_headProfile(head = head, id = scaleD * threadD, od = scaleOD * headD, l = l, h = h, t = t, thread = thread);
 
     // Shaft
     rotate_extrude($fn = thread == "threaded" ? 5 : 0)
@@ -255,7 +261,7 @@ module screw_shaftProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal")
     [id / 2, 0]
   ];
 
-  translate([0, (head == "cap" ? h : 0) + eps])
+  translate([0, (head == "cap" || head == "hex" ? h : 0) + eps])
   polygon(
     points = pts,
     paths = [[0, 1, 2, 3]],
@@ -283,7 +289,7 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     [0, -h - 3*id/2]
   ];
 
-  if ( head == "cap" ) {
+  if ( head == "cap" || head == "hex") {
     translate([0, h + eps])
     polygon(
       points = pts,
