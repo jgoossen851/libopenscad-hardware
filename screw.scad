@@ -212,7 +212,7 @@ module screw(head, size, length = 10, thread = "nominal", taper = false, adjust 
   h = ( head == "flat" )  ? (headD - threadD) / 2 / tan(40) : headH;
   t = taper ? 1.0*threadD : 0;
 
-  if ( head == "cap" || head == "flat" || head == "hex"  ) {
+  if ( head == "cap" || head == "flat" || head == "hex" || head == "pan" ) {
     // Scale the given threaded radius for the pentagon circumradius
     scaleD = thread == "threaded" ? 1 / cos (180 / 5) : 1;
 
@@ -289,17 +289,23 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     [0, -h - 3*id/2]
   ];
 
-  if ( head == "cap" || head == "hex") {
-    translate([0, h + eps])
-    polygon(
-      points = pts,
-      paths = [
-          (thread == "nominal")  ? [0, 1, 3, 4]
-        : (thread == "threaded") ? [6, 7, 2, 3, 5]
-        :                          [6, 1, 3, 5]
-      ],
-      convexity = 1
-    );
+  if ( head == "cap" || head == "hex" || head == "pan") {
+    intersection () {
+      translate([0, h + eps])
+      polygon(
+        points = pts,
+        paths = [
+            (thread == "nominal")  ? [0, 1, 3, 4]
+          : (thread == "threaded") ? [6, 7, 2, 3, 5]
+          :                          [6, 1, 3, 5]
+        ],
+        convexity = 1
+      );
+
+      if ( head == "pan" )
+      scale([1, 0.7])
+      circle(d = od);
+    }
   } else if ( head == "flat" ) {
     translate([0, eps])
     polygon(
