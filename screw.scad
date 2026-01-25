@@ -19,11 +19,18 @@ screw_calibration(head = head, size = size, thread = thread);
 // Over- & Under-sized test prints
 // (then modify tables below with best-fitting value)
 delta = 0.1;
-moduleSep = 4.5*screw_dims(size = size, thread = "nominal")[0];
-for (ix = [-1, 1])
-translate([ix*moduleSep, 0, 0])
-screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
+nomD = screw_dims(size = size, thread = "nominal")[0];
+moduleSep = 4.5 * nomD;
+for (ix = [-1, 1]) {
+  translate([ix*moduleSep, 0, 0])
+  screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
 
+  // Labels: "+"/"-"
+  rotate([90, 0, ix*90])
+  translate([0, 0, 5*nomD/2 + moduleSep])
+  linear_extrude(height = 0.5, center = true)
+  text(ix < 0 ? "-" : "+",  size = 3*nomD, halign = "center");
+}
 
 // Display some sample configurations
 translate([0, 20, 0])
