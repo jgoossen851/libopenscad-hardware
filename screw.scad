@@ -146,9 +146,9 @@ function screw_dims(head, size, thread = "nominal", adjust = 0) =
   // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [D, -, -]
   //    n    t    l
     [    1,    1,    1],  // default
-    [    3,  2.6,  3.6],  //? M3 coarse
-    [    5, 4.80, 5.20],  //? M5 coarse
-    [    8, 7.80, 8.20],  //? M8 coarse
+    [    3,  2.5,  3.6],  //? M3 coarse  (verify loose)
+    [    5, 4.40, 5.20],  //? M5 coarse  (verify loose)
+    [    8, 7.70, 8.20],  //? M8 coarse  (M8 should use printed threads; verify loose)
     [ 2.85,  2.4,  3.5],  //? #4 wood
     [ 3.51,  3.1,  4.1],  //? #6 wood
     [ 4.17,  3.8,  4.8],  //? #8 wood
