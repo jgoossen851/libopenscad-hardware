@@ -13,23 +13,28 @@ head = "cap";
 size = "M3";
 thread = "threaded";
 
+// Set test-block dimensions
+nominalDims = screw_dims(size = size, thread = "nominal");
+dx = max(nominalDims[0] * 4, 3*nominalDims[0] + 6);
+dy = min(nominalDims[1] * 1.75, nominalDims[1] + 4);
+dz = min(nominalDims[1] * 1.5, nominalDims[1] + 2);
+
 // Nominal test print
 screw_calibration(head = head, size = size, thread = thread);
 
 // Over- & Under-sized test prints
 // (then modify tables below with best-fitting value)
 delta = 0.1;
-nomD = screw_dims(size = size, thread = "nominal")[0];
-moduleSep = 4.7 * nomD;
+moduleSep = 0.99 * dx;
 for (ix = [-1, 1]) {
   translate([ix*moduleSep, 0, 0])
   screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
 
   // Labels: "+"/"-"
   rotate([90, 0, ix*90])
-  translate([0, 0, 5*nomD/2 + moduleSep])
+  translate([0, 0, dx/2 + moduleSep])
   linear_extrude(height = 0.5, center = true)
-  text(ix < 0 ? "-" : "+",  size = 3*nomD, halign = "center");
+  text(ix < 0 ? "-" : "+",  size = 2*nominalDims[0], halign = "center");
 }
 
 // Display some sample configurations
@@ -65,11 +70,7 @@ module screw_calibration( head = "cap", size = "M3", thread = "threaded", adjust
     height_head     = dims[2];
     width_nut       = dims[3];
 
-    // Set test-block dimensions
-    dx = diameter_shaft * 5;
-    dy = min(diameter_head * 1.75, diameter_head + 4);
-    dz = min(diameter_head * 1.5, diameter_head + 2);
-
+    // Set inset into test block
     inset = head == "cap" ? height_head
           : head == "hex" ? height_head
           : head == "nut" ? 0.8 * diameter_shaft
