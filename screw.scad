@@ -212,13 +212,14 @@ module screw(head, size, length = 10, thread = "nominal", taper = false, adjust 
   t = taper ? 1.0*threadD : 0;
 
   if ( head == "cap" || head == "flat" ) {
-    // Head
-    rotate_extrude()
-    screw_headProfile(head = head, id = threadD, od = headD, l = l, h = h, t = t, thread = thread);
-
-    // Shaft
     // Scale the given threaded radius for the pentagon circumradius
     scaleD = thread == "threaded" ? 1 / cos (180 / 5) : 1;
+
+    // Head
+    rotate_extrude()
+    screw_headProfile(head = head, id = scaleD * threadD, od = headD, l = l, h = h, t = t, thread = thread);
+
+    // Shaft
     rotate_extrude($fn = thread == "threaded" ? 5 : 0)
     screw_shaftProfile(head = head, id = scaleD * threadD, od = headD, l = l, h = h, t = t, thread = thread);
 
@@ -269,7 +270,7 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     // `   `
     // 0---4  Origin
     // 1 2-3  Cap/Countersink Depth
-    // | |
+    // 7 |
     // | |
     // |'
     [0, 0],
@@ -278,7 +279,8 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     [od / 2, -h],
     [od / 2, 0],
     [od / 2, l],
-    [0, l]
+    [0, l],
+    [0, -h - 3*id/2]
   ];
 
   if ( head == "cap" ) {
@@ -286,7 +288,9 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     polygon(
       points = pts,
       paths = [
-        (thread == "nominal") ? [0, 1, 3, 4] : [6, 1, 3, 5]
+          (thread == "nominal")  ? [0, 1, 3, 4]
+        : (thread == "threaded") ? [6, 7, 2, 3, 5]
+        :                          [6, 1, 3, 5]
       ],
       convexity = 1
     );
@@ -295,7 +299,9 @@ module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") 
     polygon(
       points = pts,
       paths = [
-        (thread == "nominal") ? [0, 1, 2, 4] : [6, 1, 2, 4, 5]
+          (thread == "nominal")  ? [0, 1, 2, 4]
+        : (thread == "threaded") ? [6, 7, 2, 4, 5]
+        :                          [6, 1, 2, 4, 5]
       ],
       convexity = 1
     );
