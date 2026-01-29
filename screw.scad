@@ -150,7 +150,7 @@ function screw_dims(head, size, thread = "nominal", adjust = 0) =
     [    5, 4.40, 5.20],  //? M5 coarse  (verify loose)
     [    8, 7.70, 8.20],  //? M8 coarse  (M8 should use printed threads; verify loose)
     [ 2.85,  2.4,  3.5],  //? #4 wood
-    [ 3.51,  3.1,  4.1],  //? #6 wood
+    [ 3.51,  3.1,  4.3],  //? #6 wood
     [ 4.17,  3.8,  4.8],  //? #8 wood
     [4.826, 4.40, 5.00],  //? #10 machine
   ] )
@@ -159,13 +159,13 @@ function screw_dims(head, size, thread = "nominal", adjust = 0) =
   // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [A, -, -]
   //     n    t    l
     [    1,    1,    1],  // default
-    [  5.5,    6,    6],  // M3 coarse
+    [  5.5,  5.9,  5.9],  // M3 coarse
     [  8.5,  9.0,  9.0],  //? M5 coarse
     [   13, 13.5, 13.5],  //? M8 coarse
     [5.715,  6.3,  6.3],  // #4 wood
     [7.087,  7.6,  7.6],  // #6 wood
     [8.433,  9.1,  9.1],  // #8 wood
-    [ 0.00, 0.00, 0.00],  //? #10 machine
+    [9.779,  9.8,  9.8],  //? #10 machine
   ] )
   let( headH = [
   // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [H, -, -]
@@ -177,7 +177,7 @@ function screw_dims(head, size, thread = "nominal", adjust = 0) =
     [    1,    1,    1],  //? #4 wood
     [    1,    1,    1],  //? #6 wood
     [    1,    1,    1],  //? #8 wood
-    [ 0.00, 0.00, 0.00],  //? #10 machine
+    [    1,    1,    1],  //? #10 machine
   ] )
   let( nutW = [ // (flat-to-flat)
   //   n    t    l
@@ -227,9 +227,9 @@ module screw(head, size, length = 10, thread = "nominal", taper = false, adjust 
 
   // Convert imperial to metric, adjust for cap/clearance
   l = length
-        * (( size == "no4" || size == "no6" || size == "no8" )  ? inch2mm : 1)
-        + (( head == "cap" || head == "hex" )                   ? headH   : 0)
-        + (( thread == "nominal" )                              ? 0       : 0.5);
+        * (( size == "no4" || size == "no6" || size == "no8" || size == "no10" ) ? inch2mm : 1)
+        + (( head == "cap" || head == "hex" )                                    ? headH   : 0)
+        + (( thread == "nominal" )                                               ? 0       : 0.5);
   h = ( head == "flat" )  ? (headD - threadD) / 2 / tan(40) : headH;
   t = taper ? 1.0*threadD : 0;
 
