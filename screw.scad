@@ -22,6 +22,12 @@ dz = min(nominalDims[1] * 1.5, nominalDims[1] + 2);
 // Nominal test print
 screw_calibration(head = head, size = size, thread = thread);
 
+// Label: Nominal size
+translate([dx/4, -dy/2, dz/8])
+rotate([90, 0, 0])
+linear_extrude(height = 0.5, center = true)
+text(str(screw_dims(size = size, thread = thread)[0]),  size = 1.5*nominalDims[0], halign = "center");
+
 // Over- & Under-sized test prints
 // (then modify tables below with best-fitting value)
 delta = 0.1;
