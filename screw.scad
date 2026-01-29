@@ -1,8 +1,51 @@
+// Parametric screw and bolt models for hole negatives
 
 // ### Usage #########################################################
 
 $fa = $preview ? 20 : 1;    // minimum angle for a fragment
 $fs = $preview ? 1 : 0.25;  // minimum size of a fragment
+
+// Test print, with horizontal and vertical screw holes
+//   Heads:   flat, hex, lag, pan, cap, carriage, nut, washer
+//   Sizes:   no4, no6, no8, no10, M3, M5, M8
+//   Threads: nominal, loose, threaded
+head = "cap";
+size = "M3";
+thread = "threaded";
+
+// Set test-block dimensions
+nominalDims = screw_dims(size = size, thread = "nominal");
+dx = max(nominalDims[0] * 4, 3*nominalDims[0] + 6);
+dy = min(nominalDims[1] * 1.75, nominalDims[1] + 4);
+dz = min(nominalDims[1] * 1.5, nominalDims[1] + 2);
+
+// Nominal test print
+screw_calibration(head = head, size = size, thread = thread);
+
+// Label: Nominal size
+translate([dx/4, -dy/2, dz/8])
+rotate([90, 0, 0])
+linear_extrude(height = 0.5, center = true)
+text(str(screw_dims(size = size, thread = thread)[0]),  size = 1.5*nominalDims[0], halign = "center");
+
+// Over- & Under-sized test prints
+// (then modify tables below with best-fitting value)
+delta = 0.1;
+moduleSep = 0.99 * dx;
+for (ix = [-1, 1]) {
+  translate([ix*moduleSep, 0, 0])
+  screw_calibration(head = head, size = size, thread = thread, adjust = ix * delta);
+
+  // Labels: "+"/"-"
+  rotate([90, 0, ix*90])
+  translate([0, 0, dx/2 + moduleSep])
+  linear_extrude(height = 0.5, center = true)
+  text(ix < 0 ? "-" : "+",  size = 2*nominalDims[0], halign = "center");
+}
+
+// Display some sample configurations
+translate([0, 20, 0])
+%samples(thread = "nominal");
 
 module samples(thread) {
   translate([10, 0, 0])
@@ -16,40 +59,53 @@ module samples(thread) {
   screw("flat", "no6", 1/2, thread, taper = true);
 }
 
-
-#samples("nominal");
-
-translate([0, 10, 0])
-#samples("nominal");
-
-difference() {
-  union() {
-    dx = 100;
-    dy = 10;
-    dz = 50;
-    translate([0, 0, -dz])
-    cube([dx, dy, dz]);
-    translate([0, (dy - 0.6*dy)/2, 0])
-    cube([dx, 0.6*dy, 5]);
-  }
-
-  samples("loose");
-
-  translate([0, 10, 0])
-  samples("threaded");
-}
-
+// Demonstrate access to internal parameters with the screw_dims() function:
 echo(["threadD", "headD", "headH", "nutW"]);
 echo(screw_dims("cap", "M3", "loose"));
 
 
 // ### Module ########################################################
 
-// Dimesions
+// Test Bed for tuning dimension tables to printer
+module screw_calibration( head = "cap", size = "M3", thread = "threaded", adjust = 0) {
+  difference() {
+    // Read nominal dimensions
+    dims = screw_dims(size = size, thread = "nominal");
+    diameter_shaft  = dims[0];
+    diameter_head   = dims[1];
+    height_head     = dims[2];
+    width_nut       = dims[3];
 
-// Heads
+    // Set inset into test block
+    inset = head == "cap" ? height_head
+          : head == "hex" ? height_head
+          : head == "nut" ? 0.8 * diameter_shaft
+          :                 0;
+
+    // translate([0, 0, -dz])
+    linear_extrude(height = dz)
+    square([dx, dy], center = true);
+
+    // Vertical screw
+    translate([diameter_shaft, 0, dz - inset]) {
+      screw(head = head, size = size, length = dx, thread = thread, adjust = adjust);
+      %screw(head = head, size = size, length = dx, thread = "nominal");
+    }
+
+    // Horizontal screw
+    translate([-diameter_shaft, dy/2 - inset, dz/2])
+    rotate([-90, 90, 0]){
+      screw(head = head, size = size, length = dx, thread = thread, adjust = adjust);
+      %screw(head = head, size = size, length = dx, thread = "nominal");
+    }
+  }
+}
+
+// Dimensions
+
+// * Heads (string)
 // flat      : Countersunk
-// hex       : Hex head mith flange
+// hex       : Hex head with flange
 // lag       : Hex head with no flange
 // pan       : Rounded top
 // cap       : Socket type head
@@ -57,65 +113,91 @@ echo(screw_dims("cap", "M3", "loose"));
 // nut       : Hex nut
 // washer    : Washer
 
-// Sizes
+// * Sizes (string)
 // M3, M5, etc.   : Metric
 // no6, no8, etc. : ANSI
 
-// Thread
-// nominal  : dimesions of bolt
+// * Thread (string)
+// nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
-function screw_dims(head, size, thread = "nominal") =
+
+// * Adjust
+//   Amount to add (or subtract) from all dimensions to account for additional
+//   desired clearances
+function screw_dims(head, size, thread = "nominal", adjust = 0) =
   // Dimensions: [nominal, threaded, loose]
-  let( tt = ( thread == "nominal" )   ? 0 :
-            ( thread == "threaded" )  ? 1 :
-                                        2 )
-  let( ss = ( size == "M3" )  ? 1 :
-            ( size == "no4" ) ? 2 :
-            ( size == "no6" ) ? 3 :
-            ( size == "no8" ) ? 4 :
-                                0 )
-  // https://www.boltdepot.com/fastener-information/machine-screws/machine-screw-diameter.aspx
+  let( tt = ( thread == "threaded" )  ? 1
+          : ( thread == "loose" )     ? 2
+          :                             0
+  )
+  let( ss = ( size == "M3" )   ? 1  // M3 coarse
+          : ( size == "M5" )   ? 2  // M5 coarse
+          : ( size == "M8" )   ? 3  // M8 coarse
+          : ( size == "no4" )  ? 4
+          : ( size == "no6" )  ? 5
+          : ( size == "no8" )  ? 6
+          : ( size == "no10" ) ? 7  // #10 machine
+          :                      0
+  )
   let( threadD = [
+  // https://www.boltdepot.com/fastener-information/machine-screws/machine-screw-diameter.aspx
+  // https://www.mcfeelys.com/screw_size_comparisons [-, Body Dia, Thread Dia]
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [D, -, -]
   //    n    t    l
-    [   1,   1,   1], // default
-    [   3, 3.2, 3.6], // M3 coarse
-    [2.85, 2.4, 3.5], // #4 wood
-    [3.51, 3.1, 4.1], // #6 wood
-    [4.17, 3.8, 4.8]  // #8 wood
+    [    1,    1,    1],  // default
+    [    3,  2.5,  3.6],  //? M3 coarse  (verify loose)
+    [    5, 4.40, 5.20],  //? M5 coarse  (verify loose)
+    [    8, 7.70, 8.20],  //? M8 coarse  (M8 should use printed threads; verify loose)
+    [ 2.85,  2.4,  3.5],  //? #4 wood
+    [ 3.51,  3.1,  4.3],  //? #6 wood
+    [ 4.17,  3.8,  4.8],  //? #8 wood
+    [4.826, 4.40, 5.00],  //? #10 machine
   ] )
-  // https://www.mcfeelys.com/screw_size_comparisons
   let( headD = [
+  // https://www.mcfeelys.com/screw_size_comparisons [Flat Head, -, -]
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [A, -, -]
   //     n    t    l
-    [    1,   1,   1], // default
-    [  5.3,   6,   6], // M3 coarse
-    [5.715, 6.3, 6.3], // #4 wood
-    [7.087, 7.6, 7.6], // #6 wood
-    [8.433, 9.1, 9.1]  // #8 wood
+    [    1,    1,    1],  // default
+    [  5.5,  5.9,  5.9],  // M3 coarse
+    [  8.5,  9.0,  9.0],  //? M5 coarse
+    [   13, 13.5, 13.5],  //? M8 coarse
+    [5.715,  6.3,  6.3],  // #4 wood
+    [7.087,  7.6,  7.6],  // #6 wood
+    [8.433,  9.1,  9.1],  // #8 wood
+    [9.779,  9.8,  9.8],  //? #10 machine
   ] )
   let( headH = [
+  // https://www.engineersedge.com/hardware/_metric_socket_head_cap_screws_14054.htm [H, -, -]
   // n    t    l
-    [1,   1,   1], // default
-    [3, 3.5, 3.5], // M3 coarse
-    [1,   1,   1], // #4 wood
-    [1,   1,   1], // #6 wood
-    [1,   1,   1]  // #8 wood
+    [    1,    1,    1],  // default
+    [    3,  3.5,  3.5],  // M3 coarse
+    [    5,  5.5,  5.5],  //? M5 coarse
+    [    8,  8.5,  8.5],  //? M8 coarse
+    [    1,    1,    1],  //? #4 wood
+    [    1,    1,    1],  //? #6 wood
+    [    1,    1,    1],  //? #8 wood
+    [    1,    1,    1],  //? #10 machine
   ] )
   let( nutW = [ // (flat-to-flat)
   //   n    t    l
-    [  1,   1,   1], // default
-    [5.5, 6.0, 6.1], // M3 coarse
-    [  1,   1,   1], // #4 wood
-    [  1,   1,   1], // #6 wood
-    [  1,   1,   1]  // #8 wood
+    [    1,    1,    1],  // default
+    [  5.5,  6.0,  6.1],  // M3 coarse
+    [ 0.00, 0.00, 0.00],  //? M5 coarse
+    [ 0.00, 0.00, 0.00],  //? M8 coarse
+    [    1,    1,    1],  //? #4 wood
+    [    1,    1,    1],  //? #6 wood
+    [    1,    1,    1],  //? #8 wood
+    [ 0.00, 0.00, 0.00],  //? #10 machine
   ] )
-  [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ];
+  [ threadD[ss][tt], headD[ss][tt], headH[ss][tt], nutW[ss][tt] ]
+    + adjust * [1, 1, 1, 1];
 
 // Screws
 
 // Heads
 // flat      : Countersunk
-// hex       : Hex head mith flange
+// hex       : Hex head with flange
 // lag       : Hex head with no flange
 // pan       : Rounded top
 // cap       : Socket type head
@@ -131,39 +213,50 @@ function screw_dims(head, size, thread = "nominal") =
 // Length in mm (metric) or inches (ANSI)
 
 // Thread
-// nominal  : dimesions of bolt
+// nominal  : dimensions of bolt
 // loose    : bolt clearance without engagement
 // threaded : tight clearance allowing threads to be cut
-module screw(head, size, length = 10, thread = "nominal", taper = false) {
+module screw(head, size, length = 10, thread = "nominal", taper = false, adjust = 0) {
   eps = 0.01;
   inch2mm = 25.4;
 
-  dims = screw_dims(head, size, thread = thread);
+  dims = screw_dims(head, size, thread = thread, adjust = adjust);
   threadD = dims[0];
   headD = dims[1];
   headH = dims[2];
 
   // Convert imperial to metric, adjust for cap/clearance
   l = length
-        * (( size == "no4" || size == "no6" || size == "no8" )  ? inch2mm : 1)
-        + (( head == "cap" )                                    ? headH   : 0)
-        + (( thread == "nominal" )                              ? 0       : 0.5);
+        * (( size == "no4" || size == "no6" || size == "no8" || size == "no10" ) ? inch2mm : 1)
+        + (( head == "cap" || head == "hex" )                                    ? headH   : 0)
+        + (( thread == "nominal" )                                               ? 0       : 0.5);
   h = ( head == "flat" )  ? (headD - threadD) / 2 / tan(40) : headH;
   t = taper ? 1.0*threadD : 0;
 
-  if ( head == "cap" || head == "flat" ) {
-    color( "Silver" )
-    rotate_extrude()
-    screw_profile(head = head, id = threadD, od = headD, l = l, h = h, t = t, thread = thread);
+  if ( head == "cap" || head == "flat" || head == "hex" || head == "pan" ) {
+    // Scale the given threaded radius for the pentagon circumradius
+    scaleD = thread == "threaded" ? 1 / cos (180 / 5) : 1;
+
+    // Convert side-to-side diameter to corner-to-corner
+    // Assume that the side-to-side hex width (inscribed diameter) is the same as the socket cap diameter
+    scaleOD = head == "hex" ? 2 / sqrt(3) : 1;
+
+    // Head
+    rotate([0, 0, 90])
+    rotate_extrude($fn = head == "hex" ? 6 : 0)
+    screw_headProfile(head = head, id = scaleD * threadD, od = scaleOD * headD, l = l, h = h, t = t, thread = thread);
+
+    // Shaft
+    rotate_extrude($fn = thread == "threaded" ? 5 : 0)
+    screw_shaftProfile(head = head, id = scaleD * threadD, od = headD, l = l, h = h, t = t, thread = thread);
 
   } else if ( head == "nut" ) {
     nominalDims = screw_dims("cap", size, "nominal");
     nutW = dims[3];
     nutH = 0.8 * nominalDims[0];
-    color( "Silver" )
     difference() {
       rotate_extrude($fn = 6)
-      screw_profile(head = "cap", od = nutW / sqrt(3) * 2, h = nutH);
+      screw_headProfile(head = "cap", od = nutW / sqrt(3) * 2, h = nutH);
       
       if ( thread == "nominal" ) {
         cylinder( h = 3*nutH, d = nominalDims[0]);
@@ -175,42 +268,73 @@ module screw(head, size, length = 10, thread = "nominal", taper = false) {
   }
 }
 
-
-module screw_profile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
+module screw_shaftProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
   eps = 0.01;
   pts = [
-    // 7 - 6
-    // `   `
-    // 0---5
-    // | 3-4
+    // 0-3-,  Origin
+    // | .-'
     // | |
-    // | 2
-    // 1'
+    // | 2    Taper
+    // 1'     Base
     [0, 0],
     [0, -l - eps],
     [id / 2, -l - eps + t],
+    [id / 2, 0]
+  ];
+
+  translate([0, (head == "cap" || head == "hex" ? h : 0) + eps])
+  polygon(
+    points = pts,
+    paths = [[0, 1, 2, 3]],
+    convexity = 1
+  );
+}
+
+module screw_headProfile(head, id = 0, od, l = 0, h, t = 0, thread = "nominal") {
+  eps = 0.01;
+  pts = [
+    // 6 - 5  Installation Clearance
+    // `   `
+    // 0---4  Origin
+    // 1 2-3  Cap/Countersink Depth
+    // 7 |
+    // | |
+    // |'
+    [0, 0],
+    [0, -h],
     [id / 2, -h],
     [od / 2, -h],
     [od / 2, 0],
     [od / 2, l],
-    [0, l]
+    [0, l],
+    [0, -h - 3*id/2]
   ];
 
-  if ( head == "cap" ) {
-    translate([0, h + eps])
-    polygon(
-      points = pts,
-      paths = [
-        (thread == "nominal") ? [0, 1, 2, 3, 4, 5] : [7, 1, 2, 3, 4, 6]
-      ],
-      convexity = 1
-    );
+  if ( head == "cap" || head == "hex" || head == "pan") {
+    intersection () {
+      translate([0, h + eps])
+      polygon(
+        points = pts,
+        paths = [
+            (thread == "nominal")  ? [0, 1, 3, 4]
+          : (thread == "threaded") ? [6, 7, 2, 3, 5]
+          :                          [6, 1, 3, 5]
+        ],
+        convexity = 1
+      );
+
+      if ( head == "pan" )
+      scale([1, 0.7])
+      circle(d = od);
+    }
   } else if ( head == "flat" ) {
     translate([0, eps])
     polygon(
       points = pts,
       paths = [
-        (thread == "nominal") ? [0, 1, 2, 3, 5] : [7, 1, 2, 3, 5, 6]
+          (thread == "nominal")  ? [0, 1, 2, 4]
+        : (thread == "threaded") ? [6, 7, 2, 4, 5]
+        :                          [6, 1, 2, 4, 5]
       ],
       convexity = 1
     );
