@@ -253,7 +253,7 @@ module screw(head, size, length = 10, thread = "nominal", taper = false, adjust 
   } else if ( head == "nut" ) {
     nominalDims = screw_dims("cap", size, "nominal");
     nutW = dims[3];
-    nutH = 0.8 * nominalDims[0];
+    nutH = (thread == "loose" ? 0.9 : 0.8) * nominalDims[0];
     difference() {
       rotate_extrude($fn = 6)
       screw_headProfile(head = "cap", od = nutW / sqrt(3) * 2, h = nutH);
